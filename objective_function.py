@@ -54,15 +54,18 @@ class ObjectiveFunction():
         target_corvered = []
         for target in self.targets:
             Pov = 1
+            count = 0
             for index, sensor in enumerate(node_list):
                 p = self._psm(sensor, target, type=type_assignment[index])
                 if p == 0:
                     continue
+                count += 1
                 Pov *= p
             
             Pov = 1 - Pov
-
-            if Pov >= self.threshold:
+            if count == 1 and Pov == 0:
+                target_corvered.append(target)
+            elif Pov >= self.threshold:
                 target_corvered.append(target)
         return len(target_corvered) / self.no_cell, target_corvered
 
