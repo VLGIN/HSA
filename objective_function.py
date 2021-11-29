@@ -19,6 +19,7 @@ class ObjectiveFunction():
         self.hmv = hmv
         self.hms = hms
         self.targets = targets
+        # print(self.targets)
         self.radius = radius
         self.ue = []
         for r in radius:
@@ -45,7 +46,7 @@ class ObjectiveFunction():
         return self.hms
 
     def _senscost(self, node_list):
-        return (self.max_noS + 1 - self.min_noS) / (len(node_list) + 1 - self.min_noS)
+        return (self.max_noS - self.min_noS) / (len(node_list) + 1 - self.min_noS)
     
     def _coverage_ratio(self, node_list, type_assignment):
         """
@@ -74,34 +75,30 @@ class ObjectiveFunction():
         for ia, a in enumerate(node_list):
             for ib, b in enumerate(node_list):
                 if a != b:
-                    min_dist_sensor = min(min_dist_sensor, self._distance(a, b) * (self.radius[type_assignment[ia]]) * (self.radius[type_assignment[ib]]))
+                    min_dist_sensor = min(min_dist_sensor, self._distance(a, b) * ((self.radius[type_assignment[ia]]) * (self.radius[type_assignment[ib]])))
         if min_dist_sensor == float('+inf'):
             min_dist_sensor = 0.0
         return min_dist_sensor / self.max_diagonal
 
-    def get_fitness(self, harmony):
+    def get_fitness(self, harmony_item):
+        harmony = harmony_item[0]
+        type_ = harmony_item[1]
         used = []
-        for sensor in harmony:
+        type_trace = []
+        for id, sensor in enumerate(harmony):
             if sensor[0] < 0 or sensor[1] < 0:
                 continue
             else:
                 used.append(sensor)
+                type_trace.append(type_[id])
 
         if len(used) < self.min_noS:
             return float('-inf'), 0, []
         
-        best_sol = float('-inf')
-        type_trace = []
-        coverage_ratio_ = 0
-        for case in product(self.type_sensor, repeat=len(used)):
-            coverage_ratio, _ = self._coverage_ratio(used, case)
-            fitness = self._senscost(used) * coverage_ratio * self._md(used, case)
-            if fitness > best_sol:
-                coverage_ratio_ = coverage_ratio
-                best_sol = fitness
-                type_trace = case
+        coverage_ratio, _ = self._coverage_ratio(used, type_trace)
+        fitness = self._senscost(used) * coverage_ratio * self._md(used, type_trace)
         
-        return best_sol, coverage_ratio_, type_trace
+        return fitness, coverage_ratio
 
     def _distance(self, x1, x2):
         return math.sqrt((x1[0] - x2[0])**2 + (x1[1] - x2[1])**2)
