@@ -7,7 +7,8 @@ def train(w, h, types, radius, hms, cellw, cellh, hcmr, par, bw):
     min_noS = w * h // ((max(radius)**2)*9)
     max_noS = w * h // ((min(radius)**2))
     print(min_noS, max_noS)
-    hmv = random.randint(min_noS, max_noS)
+    #hmv = random.randint(min_noS, max_noS)
+    hmv = 14
     print("HMV: ", hmv)
     targets = []
     init_x = cellw / 2
@@ -22,7 +23,7 @@ def train(w, h, types, radius, hms, cellw, cellh, hcmr, par, bw):
     hsa = HarmonySearch(objective_function=obj_func, hms=hms, hmv=hmv, hmcr=hcmr, par=par,\
                         BW=bw, lower=[[radius[0]/2, radius[0]/2], [radius[1]/2, radius[1]/2]],\
                         upper=[[w-radius[0]/2, h-radius[0]/2], [w-radius[1]/2, h-radius[1]/2]], min_no=min_noS)
-    hsa.run(10)
+    hsa.run(100)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parameter for training")

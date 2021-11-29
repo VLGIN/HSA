@@ -104,7 +104,7 @@ class HarmonySearch():
             if each_fitness < worst_fitness:
                 worst_fitness = each_fitness
                 worst_ind = ind
-        if fitness > worst_fitness:
+        if fitness >= worst_fitness:
             self._harmony_memory[worst_ind] = (harmony, fitness)
 
     def _get_best_fitness(self):

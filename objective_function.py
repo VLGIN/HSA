@@ -92,14 +92,16 @@ class ObjectiveFunction():
         
         best_sol = float('-inf')
         type_trace = []
+        coverage_ratio_ = 0
         for case in product(self.type_sensor, repeat=len(used)):
             coverage_ratio, _ = self._coverage_ratio(used, case)
             fitness = self._senscost(used) * coverage_ratio * self._md(used, case)
             if fitness > best_sol:
+                coverage_ratio_ = coverage_ratio
                 best_sol = fitness
                 type_trace = case
         
-        return best_sol, coverage_ratio, type_trace
+        return best_sol, coverage_ratio_, type_trace
 
     def _distance(self, x1, x2):
         return math.sqrt((x1[0] - x2[0])**2 + (x1[1] - x2[1])**2)
