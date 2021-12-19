@@ -37,8 +37,7 @@ class ObjectiveFunction():
         self.no_cell = (self.w // self.cell_w) * (self.h // self.cell_h)
         self.min_noS = self.w * self.h // ((max(self.radius)**2)*9)
         self.max_noS = self.w * self.h // ((min(self.radius)**2))
-        self.max_diagonal = max([self._distance([self.w, self.h], [self.radius[i] - self.ue[i], self.radius[i] - self.ue[i]]) for i in range(len(self.radius))])
-
+        self.max_diagonal = max([self._distance([self.w, self.h], [self.radius[i] + self.ue[i], self.radius[i] + self.ue[i]]) for i in range(len(self.radius))])
     def get_num_parameters(self):
         return self.hmv
 
@@ -46,7 +45,14 @@ class ObjectiveFunction():
         return self.hms
 
     def _senscost(self, node_list):
-        return (self.max_noS - self.min_noS) / (len(node_list) + 1 - self.min_noS)
+        x = (len(node_list) - self.min_noS) / (self.max_noS - self.min_noS)
+        return 1 / (10*x + 1)
+        # return (self.max_noS - self.min_noS) / (len(node_list) + 1 - self.min_noS)
+
+
+
+    def get_coverage_ratio(self, node_list, type_assignment):
+        return self._coverage_ratio(node_list, type_assignment)[0]
     
     def _coverage_ratio(self, node_list, type_assignment):
         """
@@ -56,17 +62,20 @@ class ObjectiveFunction():
         for target in self.targets:
             Pov = 1
             count = 0
+            count_ = 0
             for index, sensor in enumerate(node_list):
                 p = self._psm(sensor, target, type=type_assignment[index])
                 if p == 0:
                     continue
-                count += 1
+                count_ += 1
+                if self._distance(sensor, target) <= self.radius[type_assignment[index]] / 2:
+                  count += 1
                 Pov *= p
             
             Pov = 1 - Pov
             if count == 1 and Pov == 0:
                 target_corvered.append(target)
-            elif Pov >= self.threshold:
+            elif Pov >= self.threshold and count_ > 1:
                 target_corvered.append(target)
         return len(target_corvered) / self.no_cell, target_corvered
 
@@ -78,7 +87,7 @@ class ObjectiveFunction():
                     min_dist_sensor = min(min_dist_sensor, self._distance(a, b) * ((self.radius[type_assignment[ia]]) * (self.radius[type_assignment[ib]])))
         if min_dist_sensor == float('+inf'):
             min_dist_sensor = 0.0
-        return min_dist_sensor / self.max_diagonal
+        return min_dist_sensor / (self.max_diagonal)
 
     def get_fitness(self, harmony_item):
         harmony = harmony_item[0]
@@ -96,7 +105,8 @@ class ObjectiveFunction():
             return float('-inf'), 0, []
         
         coverage_ratio, _ = self._coverage_ratio(used, type_trace)
-        fitness = self._senscost(used) * coverage_ratio * self._md(used, type_trace)
+        # print(self._senscost(used), coverage_ratio, self._md(used, type_trace))
+        fitness = self._senscost(used) * (coverage_ratio) * self._md(used, type_trace)
         
         return fitness, coverage_ratio
 
@@ -111,7 +121,6 @@ class ObjectiveFunction():
         elif distance > self.radius[type] + self.ue[type]:
             return 0
         else:
-            lambda1 = self.ue[type] - self.radius[type] + distance
             lambda1 = self.ue[type] - self.radius[type] + distance
             lambda2 = self.ue[type] + self.radius[type] - distance
             lambda1 = math.pow(lambda1, self.beta1)
