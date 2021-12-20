@@ -43,10 +43,16 @@ class HarmonySearch():
         self.logger_fitness_run.addHandler(handler2)
         self.logger_fitness_step = logging.getLogger("track fitness step")
         self.logger_fitness_step.setLevel(logging.INFO)
-        handler3 = logging.FileHandler("track_fitness_each_step")
+        handler3 = logging.FileHandler("track_fitness_each_step.log")
         handler3.setLevel(logging.INFO)
-        handler3.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+        handler3.setFormatter(logging.Formatter('%(message)s'))
         self.logger_fitness_step.addHandler(handler3)
+        self.logger4 = logging.getLogger("type and number")
+        self.logger4.setLevel(logging.INFO)
+        handler4 = logging.FileHandler("type_and_number_each_step.log")
+        handler4.setLevel(logging.INFO)
+        handler.setFormatter(logging.Formatter('%(message)s'))
+        self.logger4.addHandler(handler4)
         
     def _random_selection(self, min_valid):
         """
@@ -223,13 +229,10 @@ class HarmonySearch():
             if sensor[0]>=0 and sensor[1]>=0:
                 final_harmony.append(sensor)
                 final_type.append(type_trace[ind])
-        self.logger_fitness_step.info("""Step {}:\nHarmony: {}\nType: {}\nFitness: {}\n
-                                Coverage: {}\n Number of sensors: {}\n""".format(i, final_harmony, final_type, best_fitness,
-                                coverage_ratio, len(final_harmony)))
-        self.logger_fitness_step.info("-------------------------------------------------")
+        self.logger_fitness_step.info("Fitness: {}\nCoverage: {}".format(best_fitness, coverage_ratio))
+        self.logger4.info("Type: {}\nNumber of sensors: {}".format(final_type, len(final_type)))
         if coverage_ratio >= threshold:
-            self.logger.info("""Harmony: {}\nType: {}\nFitness: {}\n
-                                Coverage: {}\n Number of sensors: {}\n""".format(final_harmony, final_type, best_fitness,
+            self.logger.info("""Harmony: {}\nType: {}\nFitness: {}\nCoverage: {}\n Number of sensors: {}""".format(final_harmony, final_type, best_fitness,
                                 coverage_ratio, len(final_harmony)))
             self.logger.info("-------------------------------------------------")
 
@@ -245,6 +248,7 @@ class HarmonySearch():
         self._initialize_harmony(type_init, min_valid)
         self.logger_fitness_step.info("Run {}\n".format(order))
         self.logger.info("Run {}\n".format(order))
+        self.logger4.info("Run {}\n".format(order))
         for i in tqdm(range(steps)):
             new_harmony, type_trace = self._memory_consideration()
             self._new_harmony_consideration(new_harmony, type_trace)
@@ -252,7 +256,7 @@ class HarmonySearch():
             self._evaluation(threshold, i)
         self.logger_fitness_step.info("******************************************************")
         self.logger.info("**************************************************")
-
+        self.logger4.info("**************************************************")
         best_harmony, type_, best_fitness = self._get_best_fitness()
         used_node = []
         type_trace = []
@@ -261,7 +265,7 @@ class HarmonySearch():
                 used_node.append(node)
                 type_trace.append(type_[ind])
         coverage = self._obj_function.get_coverage_ratio(used_node, type_trace)
-        self.logger_fitness_run.info(f'Best harmony: {str(best_harmony)}\nType: {str(type_)}\nBest_fitness: {str(best_fitness)}\nCoressponding coverage: {str(coverage)}')
+        self.logger_fitness_run.info(f'Best harmony: {str(used_node)}\nType: {str(type_trace)}\nBest_fitness: {str(best_fitness)}\nCoressponding coverage: {str(coverage)}\nNumber of sensors: {len(used_node)}')
         self.logger_fitness_run.info('------------------------------------------------------------------------------------')
 
     def test(self, type_init="default", min_valid=14, steps=100, threshold=0.9, file='logging.txt', num_run=12):

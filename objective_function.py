@@ -49,8 +49,6 @@ class ObjectiveFunction():
         return 1 / (10*x + 1)
         # return (self.max_noS - self.min_noS) / (len(node_list) + 1 - self.min_noS)
 
-
-
     def get_coverage_ratio(self, node_list, type_assignment):
         return self._coverage_ratio(node_list, type_assignment)[0]
     
@@ -73,7 +71,7 @@ class ObjectiveFunction():
                 Pov *= p
             
             Pov = 1 - Pov
-            if count == 1 and Pov == 0:
+            if count == 1 and count_ == 1:
                 target_corvered.append(target)
             elif Pov >= self.threshold and count_ > 1:
                 target_corvered.append(target)
@@ -106,8 +104,8 @@ class ObjectiveFunction():
         
         coverage_ratio, _ = self._coverage_ratio(used, type_trace)
         # print(self._senscost(used), coverage_ratio, self._md(used, type_trace))
-        fitness = self._senscost(used) * (coverage_ratio) * self._md(used, type_trace)
-        
+        # fitness = self._senscost(used) * (coverage_ratio) * self._md(used, type_trace)
+        fitness = self._senscost(used) * (coverage_ratio)
         return fitness, coverage_ratio
 
     def _distance(self, x1, x2):
