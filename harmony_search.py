@@ -118,10 +118,6 @@ class HarmonySearch():
             Initialize harmony_memory, the matrix containing solution vectors (harmonies)
         """
         if initial_harmonies is not None:
-            # assert len(initial_harmonies) == self._obj_function.get_hms(),\
-            #     "Size of harmony memory and objective function is not compatible"
-            # assert len(initial_harmonies[0]) == self._obj_function.get_num_parameters(),\
-            #     "Number of params in harmony memory and objective function is not compatible"
             for each_harmony, type_trace in initial_harmonies:
                 self._harmony_memory.append((each_harmony, self._obj_function.get_fitness(each_harmony, type_trace)[0]))
         else:
@@ -167,7 +163,7 @@ class HarmonySearch():
                 x = -1
             if y > self.upper[type_][1] or y < self.lower[type_][1]:
                 y = -1
-            harmony.append(self._pitch_adjustment([x, y]))
+            harmony.append([x, y])
         return harmony, type_trace
 
     def _pitch_adjustment(self, position):
@@ -243,8 +239,6 @@ class HarmonySearch():
             new_harmony, type_trace = self._memory_consideration()
             self._new_harmony_consideration(new_harmony, type_trace)
             best_harmony, type_, best_fitness = self._get_best_fitness()
-            # print("Generation: {}, best fitness: {}, use {} sensors".format(i+1, best_fitness, count_))
-            # define some criteria for stopping
             self._evaluation(threshold)
         
         best_harmony, type_, best_fitness = self._get_best_fitness()
