@@ -26,6 +26,7 @@ class HarmonySearch():
         self.min_no = min_no
         self.AoI = AoI
         self.cell_size = cell_size
+        self.best_coverage = 0
         self.logger = logging.getLogger(name='harmony')
         self.logger.setLevel(logging.INFO)
         handler = logging.FileHandler("output.log")
@@ -33,15 +34,20 @@ class HarmonySearch():
         formatter = logging.Formatter('%(levelname)s: %(message)s')
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
-        self.logger2 = logging.getLogger(name='best maximum coverage ratio')
-        self.logger2.setLevel(logging.INFO)
+        self.logger_fitness_run = logging.getLogger(name='best maximum coverage ratio')
+        self.logger_fitness_run.setLevel(logging.INFO)
         handler2 = logging.FileHandler('best_maximum_coverage_ratio.log')
         handler2.setLevel(logging.INFO)
         formatter2 = logging.Formatter('%(levelname)s: %(message)s')
         handler2.setFormatter(formatter2)
-        self.logger2.addHandler(handler2)
-        self.best_coverage = 0
-
+        self.logger_fitness_run.addHandler(handler2)
+        self.logger_fitness_step = logging.getLogger("track fitness step")
+        self.logger_fitness_step.setLevel(logging.INFO)
+        handler3 = logging.FileHandler("track_fitness_each_step")
+        handler3.setLevel(logging.INFO)
+        handler3.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+        self.logger_fitness_step.addHandler(handler3)
+        
     def _random_selection(self, min_valid):
         """
             Randomly generate harmony vector, lenghth = self.hmv
@@ -205,24 +211,27 @@ class HarmonySearch():
         return best_harmony, type_, best_fitness
 
     def _get_best_coverage_ratio(self):
-        best_harmony, type_trace = self._get_best_fitness()[0:2]
+        best_harmony, type_trace, best_fitness = self._get_best_fitness()
         coverage_ratio = self._obj_function.get_fitness((best_harmony, type_trace))[1]
-        return coverage_ratio
+        return coverage_ratio, best_harmony, type_trace, best_fitness
 
-    def _evaluation(self, threshold):
-        coverage_ratio = self._get_best_coverage_ratio()
-        best_harmony, type_, best_fitness = self._get_best_fitness()
-        if coverage_ratio > self.best_coverage and coverage_ratio >= threshold:
-            self.logger.info(f"Pos: {str(best_harmony)}\nType: {str(type_)}\nCoverage: {str(coverage_ratio)}")
-            self.best_coverage = coverage_ratio
-            self.logger.info("This harmony is sastified")
-        elif coverage_ratio >= threshold:
-            self.logger.info(f"Pos: {str(best_harmony)}\nType: {str(type_)}\nCoverage: {str(coverage_ratio)}")
-            self.logger.info("This harmony is sastified")
-        elif coverage_ratio > self.best_coverage:
-            self.logger.info(f"Pos: {str(best_harmony)}\nType: {str(type_)}\nCoverage: {str(coverage_ratio)}")
-            self.best_coverage = coverage_ratio
-        return False
+    def _evaluation(self, threshold, i):
+        coverage_ratio, best_harmony, type_trace, best_fitness = self._get_best_coverage_ratio()
+        final_harmony = []
+        final_type = []
+        for ind, sensor in enumerate(best_harmony):
+            if sensor[0]>=0 and sensor[1]>=0:
+                final_harmony.append(sensor)
+                final_type.append(type_trace[ind])
+        self.logger_fitness_step.info("""Step {}:\nHarmony: {}\nType: {}\nFitness: {}\n
+                                Coverage: {}\n Number of sensors: {}\n""".format(i, final_harmony, final_type, best_fitness,
+                                coverage_ratio, len(final_harmony)))
+        self.logger_fitness_step.info("-------------------------------------------------")
+        if coverage_ratio >= threshold:
+            self.logger.info("""Harmony: {}\nType: {}\nFitness: {}\n
+                                Coverage: {}\n Number of sensors: {}\n""".format(final_harmony, final_type, best_fitness,
+                                coverage_ratio, len(final_harmony)))
+            self.logger.info("-------------------------------------------------")
 
     def _count_sensor(self, harmony):
         count_ = 0
@@ -234,13 +243,16 @@ class HarmonySearch():
     def run(self, type_init="default", min_valid=14,steps=100, threshold=0.9,order=0):
         print("Start run:")
         self._initialize_harmony(type_init, min_valid)
-
+        self.logger_fitness_step.info("Run {}\n".format(order))
+        self.logger.info("Run {}\n".format(order))
         for i in tqdm(range(steps)):
             new_harmony, type_trace = self._memory_consideration()
             self._new_harmony_consideration(new_harmony, type_trace)
             best_harmony, type_, best_fitness = self._get_best_fitness()
-            self._evaluation(threshold)
-        
+            self._evaluation(threshold, i)
+        self.logger_fitness_step.info("******************************************************")
+        self.logger.info("**************************************************")
+
         best_harmony, type_, best_fitness = self._get_best_fitness()
         used_node = []
         type_trace = []
@@ -249,8 +261,8 @@ class HarmonySearch():
                 used_node.append(node)
                 type_trace.append(type_[ind])
         coverage = self._obj_function.get_coverage_ratio(used_node, type_trace)
-        self.logger2.info(f'Best harmony {str(best_harmony)}\nType{str(type_)}\nBest_fitness{str(best_fitness)}\nCoressponding coverage{str(coverage)}')
-        self.logger2.info('------------------------------------------------------------------------------------')
+        self.logger_fitness_run.info(f'Best harmony: {str(best_harmony)}\nType: {str(type_)}\nBest_fitness: {str(best_fitness)}\nCoressponding coverage: {str(coverage)}')
+        self.logger_fitness_run.info('------------------------------------------------------------------------------------')
 
     def test(self, type_init="default", min_valid=14, steps=100, threshold=0.9, file='logging.txt', num_run=12):
         for i in range(num_run):
